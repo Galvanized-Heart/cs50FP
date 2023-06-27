@@ -7,16 +7,17 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
+from functools import wraps
 
-# Configure application
+# Configure app
 app = Flask(__name__)
 
-# Configure session to use filesystem (instead of signed cookies)
+# Configure session
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-# Configure CS50 Library to use SQLite database
+# Configure SQLite database
 db = SQL("sqlite:///workouts.db")
 
 """
@@ -50,6 +51,149 @@ CREATE TABLE exercises (
 );
 """
 
+@app.after_request
+def after_request(response):
+    # Ensure responses aren't cached
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Expires"] = 0
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("user_id") is None:
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return decorated_function
+##########################################
+
+
+###################
+#### HOMEPAGE #####
+###################
+
 @app.route('/')
+@login_required
 def index():
-    return 'Hello, World!'
+    """Homepage"""
+
+    return render_template("index.html")
+##########################################
+
+
+###################
+##### LOG IN ######
+###################
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Log user in"""
+
+    # Forget any user_id
+    session.clear()
+
+    # User reached route via POST
+    if request.method == "POST":
+
+        # Ensure username was submitted
+        if not request.form.get("username"):
+            error = "must provide username"
+            return render_template("login.html", error=error)
+
+        # Ensure password was submitted
+        elif not request.form.get("password"):
+            error = "must provide password"
+            return render_template("login.html", error=error)
+
+        # Query database for username
+        rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
+
+        # Ensure username exists and password is correct
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            error = "invalid username and/or password"
+            return render_template("register.html", error=error)
+
+        # Remember which user has logged in
+        session["user_id"] = rows[0]["user_id"]
+
+        # Redirect user to home page
+        return redirect("/")
+
+    # User reached route via GET
+    else:
+        return render_template("login.html")
+##########################################
+
+
+###################
+##### LOG OUT #####
+###################
+
+@app.route("/logout")
+def logout():
+    """Log user out"""
+
+    # Forget any user_id
+    session.clear()
+
+    # Redirect user to login form
+    return redirect("/")
+##########################################
+
+
+###################
+#### REGISTER #####
+###################
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register new user"""
+
+    # Forget any user_id
+    session.clear()
+
+    # User reached route via POST
+    if request.method == "POST":
+
+        # Ensure username was submitted
+        if not request.form.get("username"):
+            error = "must provide username"
+            return render_template("register.html", error=error)
+
+        # Ensure password was submitted
+        elif not request.form.get("password") or not request.form.get("confirmation"):
+            error = "must provide password"
+            return render_template("register.html", error=error)
+
+        # Get user input for username and password
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+
+        # Verify passwords match
+        if password != confirmation:
+            error = "passwords do not match"
+            return render_template("register.html", error=error)
+
+        # Verify if username exists
+        if len(db.execute("SELECT * FROM users WHERE username = ?", username)) > 0:
+            error = "username is already taken"
+            return render_template("register.html", error=error)
+
+        # Encrypt password
+        hash = generate_password_hash(password)
+
+        # Save account info in database
+        db.execute("INSERT INTO users (username, hash) VALUES(?, ?)", username, hash)
+
+        # Remember which user has logged in
+        session["user_id"] = db.execute("SELECT * FROM users WHERE username = ?", username)[0]["user_id"]
+
+        # Redirect user to homepage
+        return redirect("/")
+
+    # User reached route via GET
+    else:
+        return render_template("register.html")
+    ##########################################
