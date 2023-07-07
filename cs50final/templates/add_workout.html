@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Add Workout
+{% endblock %}
+
+{% block main %}
+    <form id="workout" action="/add_workout" method="post">
+            <div class="row">
+            <!--Sidebar sticky for workout info-->
+            <div class="col-md-3">
+                <div class="sidebar-sticky">
+
+                    <!--Workout db components-->
+                    <div class="mb-3">
+                        <label style="margin-top: 20px;">Start Time</label>
+                        <input class="form-control mx-auto" style="width: 200px;" name="w_stim" value="{{ workout_data.start_time }}" type="datetime-local">
+                    </div>
+                    <div class="mb-3">
+                        <label>End Time</label>
+                        <input class="form-control mx-auto" style="width: 200px;" name="w_etim" value="{{ workout_data.end_time }}" type="datetime-local">
+                    </div>
+                    <div class="mb-3">
+                        
+                        <label>Workout Difficulty</label>
+                        <select class="form-control mx-auto" style="width: 200px;" name="w_diff">
+                                <option disabled selected>Difficulty</option>
+                                {% for w_diff in diff %}
+                                {% if w_diff == workout_data.workout_difficulty %}
+                                    <option value="{{ w_diff }}" selected>{{ w_diff }}</option>
+                                {% else %}
+                                    <option value="{{ w_diff }}">{{ w_diff }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>                     
+                    </div>
+                    <div class="mb-3">
+                        <label>Comments</label>
+                        <textarea class="form-control mx-auto" style="width: 200px;" name="w_comm" placeholder="Overall Comments" rows="4" >{{ workout_data['comments'] }}</textarea>
+                    </div>
+
+                    <!-- Button for submitting form -->
+                    <button class="btn btn-primary" type="submit">Save</button>
+
+                    <!-- Button for adding exercise -->
+                    <button class="btn btn-primary" type="button" onclick="addExercise()">Add Exercise</button>
+
+                    
+                    <!--Error message upon submission if needed-->
+                    <div>
+                        <p style="padding:2%">{{ error }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!--Container with exercise info-->
+            <div class="col-md-9" id="exercises">
+
+                <!--Exercise db components-->
+                {% for i in exercise_data %}
+                <td><input type="hidden" name="e_id" value="{{ i.exercise_id }}"></td> <!-- Susceptible to hacking since the value can be edited by inspect -->
+                <div style="display: flex; padding-top: 20px;">
+                    <label style="width: 180px;">Exercise Name:</label>
+                    <input class="form-control" style="width: 200px;" type="text" name="e_name" placeholder="Exercise Name" value="{{ i.exercise_name }}">
+                </div>                
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>Sets</td>
+                            <td>Reps</td>
+                            <td>Hold (s)</td>
+                            <td>Rest (s)</td>
+                            <td>Comments</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><input class="form-control mx-auto" style="width: 80px;" type="number" name="e_sets" placeholder="Sets" value="{{ i.sets }}"></td>
+                            <td><input class="form-control mx-auto" style="width: 80px;" type="number" name="e_reps" placeholder="Reps" value="{{ i.reps }}"></td>
+                            <td><input class="form-control mx-auto" style="width: 80px;" type="number" name="e_hold" placeholder="Hold" value="{{ i.hold_time }}"></td>
+                            <td><input class="form-control mx-auto" style="width: 80px;" type="number" name="e_rest" placeholder="Rest" value="{{ i.rest_time }}"></td>
+                            <!--    It would be nice to have difficulties for exercises, but I would have to tweek the way the data is collected in python...
+                                <td>       
+                               <select class="form-control mx-auto" style="width: 80px;" name="e_diff">
+                                    <option disabled selected>Difficulty</option>
+                                    {% for e_diff in diff %}
+                                    {% if e_diff == workout_data.workout_difficulty %}
+                                        <option value="{{ e_diff }}" selected>{{ e_diff }}</option>
+                                    {% else %}
+                                        <option value="{{ e_diff }}">{{ e_diff }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>  
+                            </td>-->
+                            <td><input class="form-control mx-auto" style="width: 350px;" type="text" name="e_comm" placeholder="Comments" value="{{ i.comments }}"></td>
+                            <td><button class="btn btn-primary" type="button" onclick="removeExercise({{ i.exercise_id }})">Remove</button></td> <!-- Susceptible to hacking since the value can be edited by inspect -->
+                        </tr>
+                    </tbody>
+                  </table>
+                  {% endfor %}
+            </div>
+        </div>
+    </form>
+
+
+<!---------------------------------------------------------------------------------------------------------------------------------------------------------------->
+
+
+    <script>
+        function addExercise() {
+            // Submit form with tag to ensure session is not lost and exercise is added
+            var form = document.getElementById("workout");
+            var tag = document.createElement("input");
+            tag.type = "hidden"
+            tag.name = "tag";
+            tag.value = "add";
+            form.appendChild(tag);
+            form.submit();
+        }
+
+
+        function removeExercise(exercise_id) {
+            // Submit form with tag=remove to ensure session is not lost and exercise is removed
+            var form = document.getElementById("workout");
+            var tag = document.createElement("input");
+            tag.type = "hidden"
+            tag.name = "tag";
+            tag.value = exercise_id;
+            form.appendChild(tag);
+            form.submit();
+        }
+    </script>
+{% endblock %}

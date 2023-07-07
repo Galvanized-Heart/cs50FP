@@ -1,32 +1,86 @@
-/* Size for brand */
-nav .navbar-brand
-{
-    font-size: xx-large;
+
+/* TODO:
+    restyle tables on /add_workout
+    fix sidebar formatting
+*/
+
+
+/*
+Colour pallette
+  Blue:         #114084
+  Light-Blue:   #3466AA
+  Lighter-Blue: #b5d7ff
+  White
+  Light-Grey:   #808080
+  Black
+*/
+
+/* Style for nav brand */
+.navbar-brand {
+  width: 50px;
+  height: 50px;
+  background-color: #000;
+  border: 1px solid #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  transition: background-color 0.5s ease;
 }
 
-/* Colors for brand */
-nav .navbar-brand .blue
-{
-    color: #537fbe;
+.navbar-brand:hover {
+  color: #fff;
+  background-color: #114084;
 }
-nav .navbar-brand .red
-{
-    color: #ea433b;
+
+/* Style for nav items */
+.nav-item {
+  font-size: medium;
+  display: inline-block;
+  background-color: #d0d0d0;
+  padding: 0px 5px;
+  border: 1px solid #000;
+  border-radius: 25px;
+  margin: 0px 5px 5px 5px;
+  transition: background-color 0.5s ease;
 }
-nav .navbar-brand .yellow
-{
-    color: #f5b82e;
+
+.nav-item:hover {
+  color: #fff;
+  background-color: #b5d7ff;
+  border: 1px solid #000;
 }
-nav .navbar-brand .green
-{
-    color: #2e944b;
+
+/* Sticky sidebar styles */
+.sidebar-sticky {
+  position: sticky;
+  top: 0;
+  border: 1px solid #388CDD;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Override sticky styles on mobile */
+@media (max-width: 767.98px) {
+  .sidebar-sticky {
+    position: static;
+    border-right: 0px;
+  }
+}
+
+label {
+  font-weight: bold;
+  color: #114084;
+  padding: 10px 20px
 }
 
 /* Style for tables */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-bottom: 50px;
   }
 
   thead th {
@@ -45,16 +99,8 @@ table {
 
   tbody tr:nth-child(even) {
     background-color: #f9f9f9;
-  }
-
-  tbody tr.buy {
-    background-color: #388CDD;
-    color: white;
-  }
-
-  tbody tr.sell {
-    background-color: #DD3838;
-    color: white;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
   }
 
   tbody tr.end_table {

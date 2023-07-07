@@ -1,9 +1,41 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Index
+    Home
 {% endblock %}
 
 {% block main %}
-<p>Container</p>
+<!--Have table display number of workouts tracked, average # exercises per workout, how hard the user pushes themselves -->
+<table>
+    <thead>
+        <tr>
+            <th>Symbol</th>
+            <th>Shares</th>
+            <th>Price</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in buy %}
+            <tr>
+                <td>{{ row.symbol }}</td>
+                <td>{{ row.shares }}</td>
+                <td>{{ row.price }}</td>
+                <td>{{ row.total }}</td>
+            </tr>
+        {% endfor %}
+            <tr class="end_table">
+                <th></th>
+                <th></th>
+                <th>CASH</th>
+                <th>${{ cash }}</th>
+            </tr>
+            <tr class="end_table">
+                <th></th>
+                <th></th>
+                <th>TOTAL</th>
+                <th>${{ count }}</th>
+            </tr>
+    </tbody>
+</table>
 {% endblock %}

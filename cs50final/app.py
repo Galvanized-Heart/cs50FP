@@ -2,11 +2,11 @@
 import os
 
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, make_response, request, session
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime
+import datetime
 from functools import wraps
 
 # Configure app
@@ -30,26 +30,31 @@ CREATE TABLE users (
 CREATE TABLE workouts (
     workout_id INTEGER PRIMARY KEY,
     user_id INTEGER,
-    workout_type TEXT,
     workout_difficulty TEXT,
     comments TEXT,
-    time INTEGER NOT NULL,
+    start_time TEXT ,
+    end_time TEXT,
+    num_exercises INTEGER,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE exercises (
     exercise_id INTEGER PRIMARY KEY,
     workout_id INTEGER,
-    sets INTEGER NOT NULL,
-    reps INTEGER NOT NULL,
+    exercise_name TEXT,
+    sets INTEGER,
+    reps INTEGER,
     hold_time INTEGER,
     rest_time INTEGER,
     exercise_difficulty TEXT,
     comments TEXT,
-    muscle_group TEXT,
     FOREIGN KEY (workout_id) REFERENCES workouts(workout_id)
 );
 """
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 @app.after_request
 def after_request(response):
@@ -66,7 +71,10 @@ def login_required(f):
             return redirect("/login")
         return f(*args, **kwargs)
     return decorated_function
-##########################################
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 ###################
@@ -76,10 +84,10 @@ def login_required(f):
 @app.route('/')
 @login_required
 def index():
-    """Homepage"""
+    
 
     return render_template("index.html")
-##########################################
+
 
 
 ###################
@@ -88,7 +96,6 @@ def index():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Log user in"""
 
     # Forget any user_id
     session.clear()
@@ -123,7 +130,6 @@ def login():
     # User reached route via GET
     else:
         return render_template("login.html")
-##########################################
 
 
 ###################
@@ -132,14 +138,12 @@ def login():
 
 @app.route("/logout")
 def logout():
-    """Log user out"""
 
     # Forget any user_id
     session.clear()
 
     # Redirect user to login form
     return redirect("/")
-##########################################
 
 
 ###################
@@ -148,7 +152,6 @@ def logout():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    """Register new user"""
 
     # Forget any user_id
     session.clear()
@@ -196,4 +199,158 @@ def register():
     # User reached route via GET
     else:
         return render_template("register.html")
-    ##########################################
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+###################
+##### HISTORY #####
+###################
+
+@app.route('/history')
+@login_required
+def history():
+    
+
+    return render_template("history.html")
+##########################################
+
+
+###################
+####### ADD #######
+###################
+
+@app.route('/add_workout', methods=["GET", "POST"])
+@login_required
+def add_workout():
+
+    # Check for workout session
+    if session.get("workout_id") is None:
+
+        # Create new workout for user, set #exercises to 0
+        db.execute("INSERT INTO workouts (user_id, num_exercises) VALUES (?,?)", session["user_id"], 0)
+
+        # Create session for most current workout
+        session["workout_id"] = db.execute("SELECT workout_id FROM workouts WHERE user_id = ? ORDER BY workout_id DESC LIMIT 1", session["user_id"])[0]["workout_id"]
+
+    # User reached route via POST
+    if request.method == "POST":
+        
+        # Access form data
+        data = request.form
+        """
+        ([
+            ('w_stim', 'None'), ('w_etim', 'None'), ('w_comm', ''), 
+            # If there is no w_diff, user did not select a difficulty
+
+            ('e_id', '29'), ('e_id', '30'), ('e_id', '31'), 
+            ('e_name', 'None'), ('e_name', 'None'), ('e_name', 'None'), 
+            ('e_sets', ''), ('e_sets', ''), ('e_sets', ''), 
+            ('e_reps', ''), ('e_reps', ''), ('e_reps', ''), 
+            ('e_hold', ''), ('e_hold', ''), ('e_hold', ''), 
+            ('e_rest', ''), ('e_rest', ''), ('e_rest', ''),
+            ('e_comm', 'None'), ('e_comm', 'None'), ('e_comm', 'None')
+
+            # Since the amount of e_diff coming in could vary depending on user selection,
+            # it would be too complicated to try and align them with the correct e_id in
+            # this data structure. It would be ideal to have the dictionaries premade for the workout
+            # and each exercise.
+        ])
+        """
+
+        # Create dicts for respective workout and exercise data
+        dict_workout = {}
+        dict_exercises = {}
+
+        # Parse workout and exercise data
+        for key, value in data.lists():
+            if key[0] == "w":
+                dict_workout[key] = value
+            else:
+                dict_exercises[key] = value
+
+        # Store workout data in db
+        db.execute("UPDATE workouts SET start_time = ?, end_time = ?, comments = ? WHERE workout_id = ?", dict_workout["w_stim"][0], dict_workout["w_etim"][0], dict_workout["w_comm"][0], session["workout_id"])
+
+        # If difficulty was added, store that too
+        if "w_diff" in dict_workout:
+            db.execute("UPDATE workouts SET workout_difficulty = ? WHERE workout_id = ?", dict_workout["w_diff"], session['workout_id'])
+
+        # Store exercise data in db
+        for i in range(0,session["exercise_count"]):
+            db.execute("UPDATE exercises SET exercise_name = ?, sets = ?, reps = ?, hold_time = ?, rest_time = ?, comments = ? WHERE exercise_id = ?", dict_exercises["e_name"][i], dict_exercises["e_sets"][i], dict_exercises["e_reps"][i], dict_exercises["e_hold"][i], dict_exercises["e_rest"][i], dict_exercises["e_comm"][i], dict_exercises["e_id"][i])
+
+        tag = request.form.get('tag')
+
+        print(f"Tag: {tag}")
+        # Catch exercise added/removed
+        if type(tag) == str:
+            # Path for remove
+            if tag.isdigit():
+                session["exercise_id"] = tag
+                return redirect("/remove_exercise")
+            # Path for add
+            else:
+                return redirect("/add_exercise")
+        
+
+        # Remove sessions for current workout and exercise count when saved
+        else:
+            del session["workout_id"]
+            del session["exercise_count"]
+
+            return redirect("/")
+    
+    # User reached route via GET
+    else:
+
+        # Create list of difficulties
+        diff = ["Easy", "Moderate", "Hard"]
+        
+        # Fetch current workout data
+        workout_data = db.execute("SELECT * FROM workouts WHERE user_id = ? AND workout_id = ?", session["user_id"], session["workout_id"])[0]
+        print(f"Workout: {workout_data}")
+
+        # Create session for number of exercises in workout
+        session["exercise_count"] = workout_data["num_exercises"]
+
+        # Fetch current exercise data
+        exercise_data = db.execute("SELECT * FROM exercises WHERE workout_id = ?", session["workout_id"])
+        print(f"Exercise: {exercise_data}")
+
+        return render_template("add_workout.html", workout_data=workout_data, exercise_data=exercise_data, diff=diff)
+    
+
+
+
+
+@app.route('/add_exercise', methods=["GET", "POST"])
+@login_required
+def add_exercise():
+            
+    print("add exercise")
+    # Create new exercise
+    db.execute("INSERT INTO exercises (workout_id) VALUES (?)", session["workout_id"])
+
+    # Increase number of exercises for current workout by 1
+    db.execute("UPDATE workouts SET num_exercises = ? WHERE workout_id = ?", session["exercise_count"] + 1, session["workout_id"])
+
+    return redirect("/add_workout")
+
+
+
+
+@app.route('/remove_exercise', methods=["GET", "POST"])
+@login_required
+def remove_exercise():
+
+    print("remove exercise")
+    # Remove specified exercise
+    db.execute("DELETE FROM exercises WHERE exercise_id = ?", session['exercise_id'])
+
+    # Decrease number of exercises for current workout by 1
+    db.execute("UPDATE workouts SET num_exercises = ? WHERE workout_id = ?", session["exercise_count"] - 1, session["workout_id"])
+
+    return redirect("/add_workout")
