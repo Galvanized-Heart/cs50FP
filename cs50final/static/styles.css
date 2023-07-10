@@ -73,7 +73,7 @@ Colour pallette
 label {
   font-weight: bold;
   color: #114084;
-  padding: 10px 20px
+  padding: 10px 20px 0px;
 }
 
 /* Style for tables */

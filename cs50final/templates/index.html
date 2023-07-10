@@ -5,36 +5,46 @@
 {% endblock %}
 
 {% block main %}
-<!--Have table display number of workouts tracked, average # exercises per workout, how hard the user pushes themselves -->
+
+<!--Table containing routes to 5 most recent workouts for user with ids to edit them, number of exercises, diff, date-->
+
+<h3>Recent Exercises</h3>
 <table>
     <thead>
         <tr>
-            <th>Symbol</th>
-            <th>Shares</th>
-            <th>Price</th>
-            <th>Total</th>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Number of Exercises</th>
+            <th>Difficulty</th>
         </tr>
     </thead>
     <tbody>
-        {% for row in buy %}
-            <tr>
-                <td>{{ row.symbol }}</td>
-                <td>{{ row.shares }}</td>
-                <td>{{ row.price }}</td>
-                <td>{{ row.total }}</td>
-            </tr>
+        {% for i in recent_workouts %}
+        <tr>
+            <td>{{i.start_time}}</td>
+            <td><a href="/align?w_id={{i.workout_id}}">{{i.workout_name}}</a></td>
+            <td>{{i.num_exercises}}</td>
+            <td>{{i.workout_difficulty}}</td>
+        </tr>
         {% endfor %}
-            <tr class="end_table">
-                <th></th>
-                <th></th>
-                <th>CASH</th>
-                <th>${{ cash }}</th>
-            </tr>
-            <tr class="end_table">
-                <th></th>
-                <th></th>
-                <th>TOTAL</th>
-                <th>${{ count }}</th>
+    </tbody>
+</table>
+
+<!--Table containing stats for number of workouts tracked, exercises/workout for 20 most recent workouts, how hard the user pushes themselves for 20 most recent workouts-->
+<h3>Stats</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Total Workouts</th>
+            <th>Average Exercises Per Workout</th>
+            <th>Most Common Difficulty</th>
+        </tr>
+    </thead>
+    <tbody>
+            <tr>
+                <td>{{total_workouts}}</td>
+                <td>{{avg_20}}</td>
+                <td>{{diff_20}}</td>
             </tr>
     </tbody>
 </table>

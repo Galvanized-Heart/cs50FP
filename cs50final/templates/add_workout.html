@@ -13,7 +13,11 @@
 
                     <!--Workout db components-->
                     <div class="mb-3">
-                        <label style="margin-top: 20px;">Start Time</label>
+                        <label style="margin-top: 20px;">Name</label>
+                        <input class="form-control mx-auto" style="width: 200px;" name="w_name" value="{{ workout_data.workout_name }}" type="text">
+                    </div>
+                    <div class="mb-3">
+                        <label>Start Time</label>
                         <input class="form-control mx-auto" style="width: 200px;" name="w_stim" value="{{ workout_data.start_time }}" type="datetime-local">
                     </div>
                     <div class="mb-3">

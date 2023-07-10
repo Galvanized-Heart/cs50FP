@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    History
+{% endblock %}
+
+{% block main %}
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Number of Exercises</th>
+            <th>Difficulty</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in all_workouts %}
+        <tr>
+            <td>{{i.start_time}}</td>
+            <td><a href="/align?w_id={{i.workout_id}}">{{i.workout_name}}</a></td>
+            <td>{{i.num_exercises}}</td>
+            <td>{{i.workout_difficulty}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
