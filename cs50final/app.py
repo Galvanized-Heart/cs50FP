@@ -1,12 +1,8 @@
 
-import os
-
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, make_response, request, session
+from flask import Flask, redirect, render_template, request, session
 from flask_session import Session
-from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
-import datetime
 from functools import wraps
 
 # Configure app
@@ -30,6 +26,7 @@ CREATE TABLE users (
 CREATE TABLE workouts (
     workout_id INTEGER PRIMARY KEY,
     user_id INTEGER,
+    workout_name TEXT,
     workout_difficulty TEXT,
     comments TEXT,
     start_time TEXT ,
@@ -91,8 +88,14 @@ def index():
     # Fetch average number of execises for 20 most recent workouts
     avg_20 = db.execute("SELECT AVG(num_exercises) FROM workouts WHERE user_id = ? ORDER BY workout_id DESC LIMIT 20", session["user_id"])[0]["AVG(num_exercises)"]
 
+    if avg_20 is None:
+        avg_20 = 0
+
     # Fetch difficulties for 20 most recent workouts
     diff_20 = db.execute("SELECT workout_difficulty FROM workouts WHERE user_id = ? ORDER BY workout_id DESC LIMIT 20", session["user_id"])
+
+    if diff_20 is None:
+        diff_20 = 0
 
     # Find most common difficulty
     counter = {
@@ -120,8 +123,7 @@ def index():
     # Count all recorded workouts by user
     total_workouts = db.execute("SELECT COUNT(*) FROM workouts WHERE user_id = ?", session["user_id"])[0]["COUNT(*)"]
 
-    return render_template("index.html", recent_workouts=recent_workouts, avg_20=avg_20, diff_20=diff_20, total_workouts=total_workouts)
-
+    return render_template("index.html", recent_workouts=recent_workouts, avg_20=format(avg_20,".2f"), diff_20=diff_20, total_workouts=total_workouts)
 
 
 ###################
@@ -234,10 +236,6 @@ def register():
     else:
         return render_template("register.html")
 
-###############################################################################
-###############################################################################
-###############################################################################
-
 
 ###################
 ##### HISTORY #####
@@ -251,12 +249,11 @@ def history():
     all_workouts = db.execute("SELECT workout_id,start_time,workout_name,num_exercises,workout_difficulty FROM workouts WHERE user_id = ?", session["user_id"])
 
     return render_template("history.html", all_workouts=all_workouts)
-##########################################
 
 
-###################
-####### ADD #######
-###################
+###########################
+####### ADD WORKOUT #######
+###########################
 
 @app.route('/add_workout', methods=["GET", "POST"])
 @login_required
@@ -356,8 +353,9 @@ def add_workout():
         return render_template("add_workout.html", workout_data=workout_data, exercise_data=exercise_data, diff=diff)
     
 
-
-
+###########################
+###### ADD EXERCISE #######
+###########################
 
 @app.route('/add_exercise', methods=["GET"])
 @login_required
@@ -372,7 +370,9 @@ def add_exercise():
     return redirect("/add_workout")
 
 
-
+###############################
+####### REMOVE EXERCISE #######
+###############################
 
 @app.route('/remove_exercise', methods=["GET"])
 @login_required
@@ -386,9 +386,10 @@ def remove_exercise():
 
     return redirect("/add_workout")
 
-###############################################################################
-###############################################################################
-###############################################################################
+
+#####################
+####### ALIGN #######
+#####################
 
 @app.route('/align', methods=["GET"])
 @login_required
